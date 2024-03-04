@@ -51,7 +51,7 @@ const int N = 2e5 + 10;
 int tree[4 * N], lazy[4 * N];
 
 void update(int node, int start, int end, int l, int r, int val) {
-    if (lazy[node]) {
+    if (lazy[node] != -1) {
 //        tree[node] = (end - start + 1) * lazy[node]; value assignment
         tree[node] += lazy[node]; //may need to change
         if (start != end) {
@@ -59,7 +59,7 @@ void update(int node, int start, int end, int l, int r, int val) {
             lazy[node * 2] += lazy[node]; //may need to change
             lazy[node * 2 + 1] += lazy[node]; //may need to change
         }
-        lazy[node] = 0; //may need to change
+        lazy[node] = -1;
     }
     if (start > end || start > r || end < l) return;
     if (start >= l && end <= r) {
@@ -80,7 +80,7 @@ void update(int node, int start, int end, int l, int r, int val) {
 
 int query(int node, int start, int end, int l, int r) {
     if (start > end || start > r || end < l) return 0; //may need to change
-    if (lazy[node]) {
+    if (lazy[node] != -1) {
 //        tree[node] = (end - start + 1) * lazy[node]; value assignment
         tree[node] += lazy[node]; //may need to change
         if (start != end) {
@@ -88,7 +88,7 @@ int query(int node, int start, int end, int l, int r) {
             lazy[node * 2] += lazy[node]; //may need to change
             lazy[node * 2 + 1] += lazy[node]; //may need to change
         }
-        lazy[node] = 0; //may need to change
+        lazy[node] = -1;
     }
     if (start >= l && end <= r) return tree[node];
     int mid = (start + end) / 2;
@@ -139,3 +139,22 @@ struct HashedString {
 };
 
 
+//operator overloading
+struct triplet {
+    int a, b, c;
+
+    triplet(int a = 0, int b = 0, int c = 0) : a(a), b(b), c(c) {}
+
+    triplet &operator=(const triplet &obj) {
+        a = obj.a, b = obj.b;
+        return *this;
+    }
+
+    triplet operator+(const triplet &obj) const {
+        return triplet(a + obj.a, b + obj.b, c + obj.c);
+    }
+
+    bool operator==(const triplet &obj) const {
+        return (a == obj.a && b == obj.b);
+    }
+};
