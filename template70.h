@@ -2,6 +2,10 @@
 #pragma GCC optimize("O3")
 #pragma GCC optimize("unroll-loops")
 
+//prama 2
+#pragma GCC optimize("Ofast")
+#pragma GCC target("avx,avx2,fma")
+
 #include<bits/stdc++.h>
 #include <ext/pb_ds/assoc_container.hpp>
 #include <ext/pb_ds/tree_policy.hpp>
@@ -13,6 +17,35 @@ typedef tree<int, null_type, less_equal<>, rb_tree_tag,
 //order_of_key: The number of items in a set that are strictly smaller than k
 //find_by_order: It returns an iterator to the ith largest element
 using namespace std;
+
+//trie
+#include <ext/pb_ds/trie_policy.hpp>
+using Trie = trie<string, null_type, trie_string_access_traits<>, pat_trie_tag, trie_prefix_search_node_update>;
+Trie t;
+int n, q;
+string s;
+cin >> n;
+while (n--) {
+    cin >> q >> s;
+    if (q == 1) {
+        // insert s into the trie
+        t.insert(s);
+    }
+    else if (q == 2) {
+        // check if s exists in the trie
+        cout << (t.find(s) == t.end() ? "NO" : "YES") << '\n';
+        // check if s is a prefix of any string in the trie
+        cout << (t.prefix_range(s).first == t.prefix_range(s).second ? "NO" : "YES") << '\n';
+        // print all strings in the trie that have s as a prefix
+        for (auto it = t.prefix_range(s).first; it != t.prefix_range(s).second; ++it)
+            cout << *it << '\n';
+    }
+    else if (q == 3) {
+        // erase s from the trie
+        t.erase(s);
+    }
+}
+
 
 //need to use for cc_hash_table
 struct hash_pair {
@@ -277,7 +310,7 @@ random_device rd;
 mt19937 gen(rd());
 int range1 = 31, range2 = 1029;
 uniform_int_distribution<> distr(range1, range2);
-const int N = 1e6, M1 = 1e9 + 7, B1 = distr(gen)/29, M2 = 998244353, B2 = distr(gen)/31;
+const int N = 1e6, M1 = 1e9 + 7, B1 = distr(gen), M2 = 998244353, B2 = distr(gen);
 vector<int> p1{1}, p2{1};
 
 void pre_calc() {
@@ -353,6 +386,14 @@ struct cmp {
         return i.second < j.second;
     }
 };
+
+//Coordinate compression
+vector<int> a=v;
+map<T, int> mp;
+int cnt = 0;
+for (auto &it : a) mp[it];
+for (auto &it : mp) it.second = cnt++;
+for (auto &it : a) it = mp[it];
 
 //Sieve of Eratosthenes
 vector<bool> is_prime(N, true);
@@ -893,52 +934,452 @@ bool dfs(int v) {
 }
 
 // MOD must be prime for division to work
-template<ll MOD>
+template<int MOD>
 class ModNum {
-    ll val;
+    int val;
 
 public:
-    ModNum (ll val_ = 0) : val(val_ % MOD) {}
-    operator ll() const { return val; }
+    ModNum(int val_ = 0) : val(val_ % MOD) {}
 
-    ModNum pow (ll p) const {
+    operator int() const { return val; }
+
+    ModNum pow(int p) const {
         ModNum res = 1;
         for (ModNum base = val; p > 0; p >>= 1, base *= base)
-            if (p & 1ll)
-                res *= base;
+            if (p & 1LL) res *= base;
         return res;
     }
 
-    ModNum inverse () const {
-        static_assert (MOD >= 2);
+    ModNum inv() const {
+        static_assert(MOD >= 2);
         assert (val != 0);
-
         return pow(MOD - 2);
     }
 
-    ModNum operator+(const ModNum& other) const { return (val + other.val) % MOD; }
-    ModNum operator-(const ModNum& other) const { return (val + MOD - other.val) % MOD; }
-    ModNum operator*(const ModNum& other) const { return (val * other.val) % MOD; }
-    ModNum operator/(const ModNum& other) const { return (*this) * other.inverse(); }
+    ModNum operator+(const ModNum &other) const { return (val + other.val) % MOD; }
 
-    ModNum& operator+=(const ModNum& other) { return *this = *this + other; }
-    ModNum& operator-=(const ModNum& other) { return *this = *this - other; }
-    ModNum& operator*=(const ModNum& other) { return *this = *this * other; }
-    ModNum& operator/=(const ModNum& other) { return *this = *this / other; }
+    ModNum operator-(const ModNum &other) const { return (val + MOD - other.val) % MOD; }
 
-    bool operator==(const ModNum& other) const { return val == other.val; }
+    ModNum operator*(const ModNum &other) const { return (val * other.val) % MOD; }
+
+    ModNum operator/(const ModNum &other) const { return (*this) * other.inv(); }
+
+    ModNum &operator+=(const ModNum &other) { return *this = *this + other; }
+
+    ModNum &operator-=(const ModNum &other) { return *this = *this - other; }
+
+    ModNum &operator*=(const ModNum &other) { return *this = *this * other; }
+
+    ModNum &operator/=(const ModNum &other) { return *this = *this / other; }
+
+    bool operator==(const ModNum &other) const { return val == other.val; }
 
 
-    friend ModNum operator+(ll a, const ModNum& b) { return ModNum(a) + b; }
-    friend ModNum operator-(ll a, const ModNum& b) { return ModNum(a) - b; }
-    friend ModNum operator*(ll a, const ModNum& b) { return ModNum(a) * b; }
-    friend ModNum operator/(ll a, const ModNum& b) { return ModNum(a) / b; }
+    friend ModNum operator+(int a, const ModNum &b) { return ModNum(a) + b; }
 
-    friend bool operator==(ll a, const ModNum& b) { return ModNum(a) == b; }
+    friend ModNum operator-(int a, const ModNum &b) { return ModNum(a) - b; }
 
-    friend ostream& operator<<(ostream& os, const ModNum& num) { return os << num.val; }
-    friend istream& operator>>(istream& is, ModNum& num) { return is >> num.val; }
+    friend ModNum operator*(int a, const ModNum &b) { return ModNum(a) * b; }
+
+    friend ModNum operator/(int a, const ModNum &b) { return ModNum(a) / b; }
+
+    friend bool operator==(int a, const ModNum &b) { return ModNum(a) == b; }
+
+    friend ostream &operator<<(ostream &os, const ModNum &num) { return os << num.val; }
+
+    friend istream &operator>>(istream &is, ModNum &num) { return is >> num.val; }
 };
 
-const int P = 1e9 + 7; // Set the Prime
+const int P = 998244353; // Set the Prime
 using mint = ModNum<P>;
+
+//Articulation Bridge
+void IS_BRIDGE(int v,int to); // some function to process the found bridge
+int n; // number of nodes
+vector<vector<int>> adj; // adjacency list of graph
+
+vector<bool> visited;
+vector<int> tin, low;
+int timer;
+
+void dfs(int v, int p = -1) {
+    visited[v] = true;
+    tin[v] = low[v] = timer++;
+    bool parent_skipped = false;
+    for (int to : adj[v]) {
+        if (to == p && !parent_skipped) {
+            parent_skipped = true;
+            continue;
+        }
+        if (visited[to]) {
+            low[v] = min(low[v], tin[to]);
+        } else {
+            dfs(to, v);
+            low[v] = min(low[v], low[to]);
+            if (low[to] > tin[v])
+                IS_BRIDGE(v, to);
+        }
+    }
+}
+
+void find_bridges() {
+    timer = 0;
+    visited.assign(n, false);
+    tin.assign(n, -1);
+    low.assign(n, -1);
+    for (int i = 0; i < n; ++i) {
+        if (!visited[i])
+            dfs(i);
+    }
+}
+
+//sorted unique vector
+vec.erase(unique(vec.begin(), vec.end()), vec.end());
+
+//bitwise hacks
+num |= (1 << pos); //set
+num &= (~(1 << pos)); //unset
+num ^= (1 << pos); //toggle
+ret = num & (-num); //lowest set bit
+bool bit = num & (1 << pos); //check nth bit is set or unset
+__builtin_popcountll(num);
+__builtin_ctzll(num);
+__builtin_clzll(num);
+
+//directions
+const int dx[4] = {1,0,-1,0}, dy[4] = {0,1,0,-1};
+const int dx[8] = {1, 0, -1, 0, 1, 1, -1, -1}, dy[8] = {0, 1, 0, -1, -1, 1, -1, 1};
+bool ok(int x, int y) { return x >= 0 && y >= 0 && x < n && y < m; }
+
+//More String template
+
+
+//advanced hashing
+const int N = 1e5 + 9;
+int power(long long n, long long k, const int mod) {
+  int ans = 1 % mod;
+  n %= mod;
+  if (n < 0) n += mod;
+  while (k) {
+    if (k & 1) ans = (long long) ans * n % mod;
+    n = (long long) n * n % mod;
+    k >>= 1;
+  }
+  return ans;
+}
+
+using T = array<int, 2>;
+const T MOD = {127657753, 987654319};
+const T p = {137, 277};
+
+T operator + (T a, int x) {return {(a[0] + x) % MOD[0], (a[1] + x) % MOD[1]};}
+T operator - (T a, int x) {return {(a[0] - x + MOD[0]) % MOD[0], (a[1] - x + MOD[1]) % MOD[1]};}
+T operator * (T a, int x) {return {(int)((long long) a[0] * x % MOD[0]), (int)((long long) a[1] * x % MOD[1])};}
+T operator + (T a, T x) {return {(a[0] + x[0]) % MOD[0], (a[1] + x[1]) % MOD[1]};}
+T operator - (T a, T x) {return {(a[0] - x[0] + MOD[0]) % MOD[0], (a[1] - x[1] + MOD[1]) % MOD[1]};}
+T operator * (T a, T x) {return {(int)((long long) a[0] * x[0] % MOD[0]), (int)((long long) a[1] * x[1] % MOD[1])};}
+ostream& operator << (ostream& os, T hash) {return os << "(" << hash[0] << ", " << hash[1] << ")";}
+
+T pw[N], ipw[N];
+void prec() {
+  pw[0] =  {1, 1};
+  for (int i = 1; i < N; i++) {
+    pw[i] = pw[i - 1] * p;
+  }
+  ipw[0] =  {1, 1};
+  T ip = {power(p[0], MOD[0] - 2, MOD[0]), power(p[1], MOD[1] - 2, MOD[1])};
+  for (int i = 1; i < N; i++) {
+    ipw[i] = ipw[i - 1] * ip;
+  }
+}
+struct Hashing {
+  int n;
+  string s; // 1 - indexed
+  vector<array<T, 2>> t; // (normal, rev) hash
+  array<T, 2> merge(array<T, 2> l, array<T, 2> r) {
+    l[0] = l[0] + r[0];
+    l[1] = l[1] + r[1];
+    return l;
+  }
+  void build(int node, int b, int e) {
+    if (b == e) {
+      t[node][0] = pw[b] * s[b];
+      t[node][1] = pw[n - b + 1] * s[b];
+      return;
+    }
+    int mid = (b + e) >> 1, l = node << 1, r = l | 1;
+    build(l, b, mid);
+    build(r, mid + 1, e);
+    t[node] = merge(t[l], t[r]);
+  }
+  void upd(int node, int b, int e, int i, char x) {
+    if (b > i || e < i) return;
+    if (b == e && b == i) {
+      t[node][0] = pw[b] * x;
+      t[node][1] = pw[n - b + 1] * x;
+      return;
+    }
+    int mid = (b + e) >> 1, l = node << 1, r = l | 1;
+    upd(l, b, mid, i, x);
+    upd(r, mid + 1, e, i, x);
+    t[node] = merge(t[l], t[r]);
+  }
+  array<T, 2> query(int node, int b, int e, int i, int j) {
+    if (b > j || e < i) return {T({0, 0}), T({0, 0})};
+    if (b >= i && e <= j) return t[node];
+    int mid = (b + e) >> 1, l = node << 1, r = l | 1;
+    return merge(query(l, b, mid, i, j), query(r, mid + 1, e, i, j));
+  }
+  Hashing() {}
+  Hashing(string _s) {
+    n = _s.size();
+    s = "." + _s;
+    t.resize(4 * n + 1);
+    build(1, 1, n);
+  }
+  void upd(int i, char c) {
+    upd(1, 1, n, i, c);
+    s[i] = c;
+  }
+  T get_hash(int l, int r) { // 1 - indexed
+    return query(1, 1, n, l, r)[0] * ipw[l - 1];
+  }
+  T rev_hash(int l, int r) { // 1 - indexed
+    return query(1, 1, n, l, r)[1] * ipw[n - r];
+  }
+  T get_hash() {
+    return get_hash(1, n);
+  }
+  bool is_palindrome(int l, int r) {
+    return get_hash(l, r) == rev_hash(l, r);
+  }
+};
+int32_t main() {
+  ios_base::sync_with_stdio(0);
+  cin.tie(0);
+  prec();
+  string s; cin >> s;
+  Hashing H(s);
+  int n = s.size();
+  int q; cin >> q;
+  while (q--) {
+    int ty; cin >> ty;
+    if (ty == 1) {
+      int k; char c; cin >> k >> c;
+      H.upd(k, c);
+    }
+    else if (ty == 2) {
+      int k; cin >> k;
+      int l = 1, r = min(k - 1, n - k), ans = 0;
+      while (l <= r) {
+        int mid = (l + r) / 2;
+        int x = k - mid, y = k + mid;
+        if (H.is_palindrome(x, y)) ans = mid, l = mid + 1;
+        else r = mid - 1;
+      }
+      cout << ans * 2 + 1 << '\n';
+    }
+    else {
+      int k; cin >> k;
+      int l = 1, r = min(k, n - k), ans = -1;
+      while (l <= r) {
+        int mid = (l + r) / 2;
+        int x = k - mid + 1, y = k + mid;
+        if (H.is_palindrome(x, y)) ans = mid, l = mid + 1;
+        else r = mid - 1;
+      }
+      cout << (ans == -1 ? -1 : ans * 2) << '\n';
+    }
+  }
+  return 0;
+}
+
+//Suffix Array
+const int K=__lg(N)+1;
+struct SuffixArray{
+    int SA[N],LCP[N],invSA[N];
+    int RA[N],c[N],n;
+    int Table[K][N]={{0}},lgval[N];
+    inline void countingSort(int k){
+        int mx = max(130,n),i,j,sum;
+		fill(c,c+mx+1,0);
+		for(i=0; i<n; i++)c[i+k<n ? RA[i+k]:0]++;
+		for(i=0,sum=0; i<mx; i++){j=c[i],c[i]=sum,sum+=j;}
+		for(i=0; i<n; i++)invSA[c[SA[i]+k<n?RA[SA[i]+k]:0]++]=SA[i];
+		for(i=0; i<n; i++)SA[i]=invSA[i];
+    }
+    void init(const string &s){
+        int i,k,j;
+		n = (int)s.size();
+		auto cmp = [&](int &a, int &b)->bool{
+			if(RA[a]^RA[b])return RA[a]<RA[b];
+			return (a+k<n && b+k<n)?RA[a+k]<RA[b+k]:a>b;
+		};
+        for(i=0; i<n; i++)SA[i]=i,RA[i]=s[i];
+		for(k=1; k<n; k<<=1){
+			countingSort(k);
+			countingSort(0);
+			invSA[0]=1;
+			for(i=1; i<n; i++)invSA[i]=invSA[i-1]+cmp(SA[i-1],SA[i]);
+			for(i=0; i<n; i++)RA[SA[i]]=invSA[i];
+			if(invSA[n-1]==n)break;
+		}
+		for(i=0; i<n; i++)invSA[SA[i]]=i;
+		for(i=0,k=0; i<n; i++){
+			if(invSA[i]==0)k=0;
+			else{
+				j=SA[invSA[i]-1];
+				while(i+k<n && j+k<n && s[i+k]==s[j+k])k++;
+				LCP[invSA[i]]=k;
+				Table[0][invSA[i]]=k;
+				if(k>0)k--;
+				else k=0;
+			}
+		}
+		//for(i=0; i<n; i++)cerr<<setw(2)<<SA[i]<<", LCP: "<<LCP[i]<<" "<<s.substr(SA[i])<<endl;
+		lgval[0]=lgval[1]=0;
+		for(i=2; i<n; i++)lgval[i]=lgval[i>>1]+1;
+        for(i=1; i<=K; i++){
+            for(j=0; j+(1<<i)-1<n; j++){
+                Table[i][j] = min(Table[i-1][j], Table[i-1][j+(1<<(i-1))]);
+            }
+        }
+    }
+
+     inline int lcp(int l, int r){
+        l=invSA[l];
+        r=invSA[r];
+        if(l>r)swap(l,r);
+        l++;
+        int lg=lgval[r-l+1];
+        return min(Table[lg][l],Table[lg][r-(1<<lg)+1]);
+    }
+}SA;
+
+
+//tree- Euler Tour
+#include <algorithm>
+#include <iostream>
+#include <vector>
+
+using std::cout;
+using std::endl;
+using std::vector;
+
+// BeginCodeSnip{BIT (from PURS module)}
+template <class T> class BIT {
+  private:
+	int size;
+	vector<T> bit;
+	vector<T> arr;
+
+  public:
+	BIT(int size) : size(size), bit(size + 1), arr(size) {}
+
+	void set(int ind, int val) { add(ind, val - arr[ind]); }
+
+	void add(int ind, int val) {
+		arr[ind] += val;
+		ind++;
+		for (; ind <= size; ind += ind & -ind) { bit[ind] += val; }
+	}
+
+	T pref_sum(int ind) {
+		ind++;
+		T total = 0;
+		for (; ind > 0; ind -= ind & -ind) { total += bit[ind]; }
+		return total;
+	}
+};
+// EndCodeSnip
+
+vector<vector<int>> neighbors;
+vector<int> start;
+vector<int> end;
+int timer = 0;
+
+void euler_tour(int at, int prev) {
+	start[at] = timer++;
+	for (int n : neighbors[at]) {
+		if (n != prev) { euler_tour(n, at); }
+	}
+	end[at] = timer;
+}
+
+int main() {
+	int node_num;
+	int query_num;
+	std::cin >> node_num >> query_num;
+
+	vector<int> vals(node_num);
+	for (int &v : vals) { std::cin >> v; }
+
+	neighbors.resize(node_num);
+	for (int e = 0; e < node_num - 1; e++) {
+		int n1, n2;
+		std::cin >> n1 >> n2;
+		neighbors[--n1].push_back(--n2);
+		neighbors[n2].push_back(n1);
+	}
+
+	start.resize(node_num);
+	end.resize(node_num);
+	euler_tour(0, -1);
+
+	BIT<long long> bit(node_num);
+	for (int i = 0; i < node_num; i++) { bit.set(start[i], vals[i]); }
+	for (int q = 0; q < query_num; q++) {
+		int type;
+		std::cin >> type;
+		if (type == 1) {
+			int node, val;
+			std::cin >> node >> val;
+			bit.set(start[--node], val);
+		} else if (type == 2) {
+			int node;
+			std::cin >> node;
+			long long end_sum = bit.pref_sum(end[--node] - 1);
+			long long start_sum;
+			if (start[node] == 0) {
+				start_sum = 0;
+			} else {
+				start_sum = bit.pref_sum(start[node] - 1);
+			}
+			cout << end_sum - start_sum << '\n';
+		}
+	}
+}
+
+//bitset operation
+bitset<size> variable_name;
+bitset<size> variable_name(DECIMAL_NUMBER);
+bitset<size> variable_name("BINARY_STRING");
+set()//Set the bit value at the given index to 1.
+reset()//Set the bit value at a given index to 0.
+flip()//Flip the bit value at the given index.
+count()//Count the number of set bits.
+test()//Returns the boolean value at the given index.
+any()//Checks if any bit is set.
+none()//Checks if none bit is set.
+all()//Check if all bit is set.
+size()//Returns the size of the bitset.
+to_string()//Converts bitset to std::string.
+to_ulong()//Converts bitset to unsigned long.
+to_ullong()//Converts bitset to unsigned long long.
+
+//tuple operation
+tuple<int,char> foo (10,'x');
+auto bar = make_tuple ("test", 3.1, 14, 'y');
+get<2>(bar) = 100;    // access element
+int myint; char mychar;
+tie (myint, mychar) = foo;  // unpack elements
+tie (ignore, ignore, myint, mychar) = bar;  // unpack (with ignore)
+tuple_size<decltype(geek)>::value  //returns the number of elements present in the tuple
+tup1.swap(tup2); // Swapping tup1 values with tup2
+
+// Initializing 1st tuple
+tuple <int,char,float> tup1(20,'g',17.5);
+// Initializing 2nd tuple
+tuple <int,char,float> tup2(30,'f',10.5);
+// Concatenating 2 tuples to return a new tuple
+auto tup3 = tuple_cat(tup1,tup2);
