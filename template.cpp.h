@@ -1,9 +1,5 @@
-//
-// Created by ajmis on 2/9/2024.
-//
-
-#ifndef CP_TEMPLATE_CPP_H
-#define CP_TEMPLATE_CPP_H
+#ifndef DEBUG_TEMPLATE_CPP
+#define DEBUG_TEMPLATE_CPP
 
 #include <bits/stdc++.h>
 // #define cerr cout
@@ -21,7 +17,7 @@ namespace __DEBUG_UTIL__ {
 
     void print(string x) { cerr << "\"" << x << "\""; }
 
-    void print(vector<bool> &&v) { /* Overloaded this because stl optimizes vector<bool> by using
+    void print(vector<bool> &v) { /* Overloaded this because stl optimizes vector<bool> by using
          _Bit_reference instead of bool to conserve space. */
         int f = 0;
         cerr << '{';
@@ -92,10 +88,28 @@ namespace __DEBUG_UTIL__ {
             cerr << "]\n";
     }
 
+    template<typename T, typename... V>
+    void printerArr(const char *names, T arr, size_t N, V... tail) {
+        size_t i = 0;
+        for (; names[i] and names[i] != ','; i++)
+            cerr << names[i];
+        for (i++; names[i] and names[i] != ','; i++);
+        cerr << " = {";
+        for (size_t ind = 0; ind < N; ind++)
+            cerr << (ind ? "," : ""), print(arr[ind]);
+        cerr << "}";
+        if constexpr (sizeof...(tail))
+            cerr << " ||", printerArr(names + i + 1, tail...);
+        else
+            cerr << "]\n";
+    }
+
 }
 #ifndef ONLINE_JUDGE
 #define debug(...) std::cerr << __LINE__ << ": [", __DEBUG_UTIL__::printer(#__VA_ARGS__, __VA_ARGS__)
+#define debugArr(...) std::cerr << __LINE__ << ": [", __DEBUG_UTIL__::printerArr(#__VA_ARGS__, __VA_ARGS__)
 #else
 #define debug(...)
+#define debugArr(...)
 #endif
 #endif
