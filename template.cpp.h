@@ -1,6 +1,18 @@
 #ifndef DEBUG_TEMPLATE_CPP
 #define DEBUG_TEMPLATE_CPP
 
+
+//struct Point (need to implement in main.cpp)
+//{
+//    int x{};
+//    int y{};
+//};
+//void print(Point ob)
+//{
+//    cerr << "(" << ob.x << "," << ob.y << ")";
+//}
+
+
 #include <bits/stdc++.h>
 // #define cerr cout
 namespace __DEBUG_UTIL__ {
