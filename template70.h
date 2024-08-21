@@ -10,15 +10,23 @@
 #include <ext/pb_ds/assoc_container.hpp>
 #include <ext/pb_ds/tree_policy.hpp>
 using namespace __gnu_pbds;
-typedef tree<int, null_type, less_equal<>, rb_tree_tag,
-        tree_order_statistics_node_update>
-        ordered_set;
+typedef tree<int, null_type, less_equal<>, rb_tree_tag, tree_order_statistics_node_update> ordered_set;
+//for ordered multiset "upper_bound" and "lower_bound" are reversed
 //o.erase(--(o.lower_bound(v[i])))
 //order_of_key: The number of items in a set that are strictly smaller than k
 //find_by_order: It returns an iterator to the ith largest element
 using namespace std;
 
 //trie
+//manual
+struct trie {
+    int sz = 0;
+    trie *arr[10];
+};
+trie root = trie();
+trie *now = &root;
+
+//built in
 #include <ext/pb_ds/trie_policy.hpp>
 using Trie = trie<string, null_type, trie_string_access_traits<>, pat_trie_tag, trie_prefix_search_node_update>;
 Trie t;
@@ -91,6 +99,27 @@ unordered_map<long long, int, custom_hash> safe_map;
 
 
 //Fenwick Tree
+template <class T>
+struct BIT { //1-indexed
+  int n; vector<T> t;
+  BIT() {}
+  BIT(int _n) {
+    n = _n; t.assign(n + 1, 0);
+  }
+  T query(int i) {
+    T ans = 0;
+    for (; i >= 1; i -= (i & -i)) ans += t[i];
+    return ans;
+  }
+  void upd(int i, T val) {
+    if (i <= 0) return;
+    for (; i <= n; i += (i & -i)) t[i] += val;
+  }
+  void upd(int l, int r, T val) {upd(l, val),upd(r + 1, -val);}
+
+  T query(int l, int r) {return query(r) - query(l - 1);}
+};
+
 vector<int> BIT;
 
 int query(int idx) {
@@ -110,7 +139,7 @@ int build(int node, int start, int end, vector<int> &v) {
     return tree[node] = build(node * 2, start, mid, v) + build(node * 2 + 1, mid + 1, end, v);//may need to change
 }
 
-//ST (range query point update)
+//Segment Tree (range query point update)
 vector<int> tree;
 
 void update(int node, int start, int end, int idx, int val) {
@@ -129,63 +158,159 @@ int query(int node, int start, int end, int l, int r) {
     if (start > r || end < l) return 0; //may need to change
     if (start >= l && end <= r) return tree[node];
     int mid = (start + end) / 2;
-    int p1 = query(node * 2, start, mid, l, r);
-    int p2 = query(node * 2 + 1, mid + 1, end, l, r);
-    return p1 + p2; //may need to change
+    int q1 = query(node * 2, start, mid, l, r);
+    int q2 = query(node * 2 + 1, mid + 1, end, l, r);
+    return q1 + q2; //may need to change
 }
+NODE *root;
 
 
 //ST (Lazy)
-const int N = 2e5 + 10;
-vector<int> tree(4 * N), lazy(4 * N);
+const int N = 2e5 + 5;
+vector<int> tree(4 * N), lazy(4 * N,-1);
+
+void propagate(int node, int l, int r) {
+    if (lazy[node]==-1) return; //may need to change (don't use in case of sum)
+//    tree[node] = (r - l + 1) * lazy[node]; //assignment
+//    tree[node] = lazy[node]; //max-min assigment
+//    tree[node] += lazy[node]; //max-min sum
+    tree[node] += (r - l + 1) * lazy[node];
+    if (l != r) {
+//        lazy[node * 2] = lazy[node * 2 + 1] = lazy[node]; //assignment
+        lazy[node * 2] += lazy[node];
+        lazy[node * 2 + 1] += lazy[node];
+    }
+    lazy[node] = -1;
+}
 
 void update(int node, int start, int end, int l, int r, int val) {
-    if (lazy[node]) {
-//        tree[node] = (end - start + 1) * lazy[node]; value assignment
-        tree[node] += lazy[node]; //may need to change
-        if (start != end) {
-//            lazy[node * 2] = lazy[node * 2 + 1] = lazy[node]; value assignment
-            lazy[node * 2] += lazy[node]; //may need to change
-            lazy[node * 2 + 1] += lazy[node]; //may need to change
-        }
-        lazy[node] = 0;
-    }
-    if (start > end || start > r || end < l) return;
+    propagate(node, start, end);
+    if (start > r || end < l) return;
     if (start >= l && end <= r) {
-//        tree[node] = (end - start + 1) * val; value assignment
-        tree[node] += val; //may need to change
-        if (start != end) {
-//            lazy[node * 2] = lazy[node * 2 + 1] = val; value assignment
-            lazy[node * 2] += val; //may need to change
-            lazy[node * 2 + 1] += val; //may need to change
-        }
+//        lazy[node] = val; //assignment
+        lazy[node] += val;
+        propagate(node, start, end);
         return;
     }
     int mid = (start + end) / 2;
     update(node * 2, start, mid, l, r, val);
     update(node * 2 + 1, mid + 1, end, l, r, val);
-//    tree[node] = tree[node * 2] + tree[node * 2 + 1]; value assignment
-    tree[node] += tree[node * 2] + tree[node * 2 + 1];
+    tree[node] = tree[node * 2] + tree[node * 2 + 1]; //may need to change
 }
 
 int query(int node, int start, int end, int l, int r) {
-    if (start > end || start > r || end < l) return 0; //may need to change
-    if (lazy[node]) {
-//        tree[node] = (end - start + 1) * lazy[node]; value assignment
-        tree[node] += lazy[node]; //may need to change
-        if (start != end) {
-//            lazy[node * 2] = lazy[node * 2 + 1] = lazy[node]; value assignment
-            lazy[node * 2] += lazy[node]; //may need to change
-            lazy[node * 2 + 1] += lazy[node]; //may need to change
-        }
-        lazy[node] = 0;
-    }
+    propagate(node, start, end);
+    if (start > r || end < l) return 0; //may need to change
     if (start >= l && end <= r) return tree[node];
     int mid = (start + end) / 2;
-    int p1 = query(node * 2, start, mid, l, r);
-    int p2 = query(node * 2 + 1, mid + 1, end, l, r);
-    return p1 + p2;
+    int q1 = query(node * 2, start, mid, l, r);
+    int q2 = query(node * 2 + 1, mid + 1, end, l, r);
+    return q1 + q2; //may need to change
 }
+
+
+//XOR seg tree
+struct NODE {
+    int on[B], off[B];
+};
+NODE tree[4 * N];
+int n, q, arr[N], lazy[4 * N];
+
+NODE merge(NODE &a, NODE &b) {
+    NODE ret;
+    for (int i = 0; i < B; ++i) {
+        ret.on[i] = a.on[i] + b.on[i];
+        ret.off[i] = a.off[i] + b.off[i];
+    }
+    return ret;
+}
+
+void build(int node, int start, int end) {
+    if (start == end) {
+        for (int i = 0; i < B; ++i) {
+            if ((1 << i) & arr[start]) tree[node].on[i] = 1;
+            else tree[node].off[i] = 1;
+        }
+        return;
+    }
+    int mid = (start + end) / 2;
+    build(node * 2, start, mid);
+    build(node * 2 + 1, mid + 1, end);
+    tree[node] = merge(tree[node * 2], tree[node * 2 + 1]);
+}
+
+void propagate(int node, int l, int r) {
+    if (lazy[node] == 0) return;
+    for (int i = 0; i < B; ++i) {
+        if ((1 << i) & lazy[node]) swap(tree[node].on[i], tree[node].off[i]);
+    }
+    if (l != r) {
+        lazy[node * 2] ^= lazy[node];
+        lazy[node * 2 + 1] ^= lazy[node];
+    }
+    lazy[node] = 0;
+}
+
+void update(int node, int start, int end, int l, int r, int val) {
+    propagate(node, start, end);
+    if (start > r || end < l) return;
+    if (start >= l && end <= r) {
+        for (int i = 0; i < B; ++i) {
+            if ((1 << i) & val) lazy[node] ^= (1 << i);
+        }
+        propagate(node, start, end);
+        return;
+    }
+    int mid = (start + end) / 2;
+    update(node * 2, start, mid, l, r, val);
+    update(node * 2 + 1, mid + 1, end, l, r, val);
+    tree[node] = merge(tree[node * 2], tree[node * 2 + 1]);
+}
+
+NODE query(int node, int start, int end, int l, int r) {
+    propagate(node, start, end);
+    if (start > r || end < l) return {};
+    if (start >= l && end <= r) return tree[node];
+    int mid = (start + end) / 2;
+    NODE q1 = query(node * 2, start, mid, l, r);
+    NODE q2 = query(node * 2 + 1, mid + 1, end, l, r);
+    return merge(q1, q2);
+}
+
+
+//Dynamic ST
+struct NODE {
+    int val;
+    NODE *l, *r;
+};
+
+void update(NODE *node, int start, int end, int idx, int val) {
+    if (start > idx || end < idx) return;
+    if (start == end) {
+        node->val += val;
+        return;
+    }
+    int mid = (start + end) / 2;
+    if (idx <= mid) {
+        if (!node->l)node->l = new NODE();
+        update(node->l, start, mid, idx, val);
+    }
+    else {
+        if (!node->r)node->r = new NODE();
+        update(node->r, mid + 1, end, idx, val);
+    }
+    node->val = (node->l ? node->l->val : 0) + (node->r ? node->r->val : 0);
+}
+
+int query(NODE *node, int start, int end, int l, int r) {
+    if (start > r || end < l || node == nullptr) return 0;
+    if (start >= l && end <= r) return node->val;
+    int mid = (start + end) / 2;
+    int q1 = query(node->l, start, mid, l, r);
+    int q2 = query(node->r, mid + 1, end, l, r);
+    return q1 + q2;
+}
+
 
 //ST (find the number of elements greater than k in a given range l,r)
 const int N = 1e5 + 5;
@@ -226,11 +351,63 @@ int query(int node, int start, int end, int l, int r, int k) {
     if (start >= l && end <= r)
         return tree[node].size() - (upper_bound(tree[node].begin(), tree[node].end(), k) - tree[node].begin());
     int mid = (start + end) / 2;
-    int p1 = query(node * 2, start, mid, l, r, k);
-    int p2 = query(node * 2 + 1, mid + 1, end, l, r, k);
-    return p1 + p2;
+    int q1 = query(node * 2, start, mid, l, r, k);
+    int q2 = query(node * 2 + 1, mid + 1, end, l, r, k);
+    return q1 + q2;
 }
 // update(1, 1, N);
+
+//2D ST
+tree[4 * N][4 * N];
+void update_y(int vx, int lx, int rx, int vy, int ly, int ry, int x, int y, int new_val) {
+    if (ly == ry) {
+        if (lx == rx)
+            tree[vx][vy] = new_val;
+        else
+            tree[vx][vy] = tree[vx * 2][vy] + tree[vx * 2 + 1][vy];
+    }
+    else {
+        int my = (ly + ry) / 2;
+        if (y <= my)
+            update_y(vx, lx, rx, vy * 2, ly, my, x, y, new_val);
+        else
+            update_y(vx, lx, rx, vy * 2 + 1, my + 1, ry, x, y, new_val);
+        tree[vx][vy] = tree[vx][vy * 2] + tree[vx][vy * 2 + 1];
+    }
+}
+
+void update_x(int vx, int lx, int rx, int x, int y, int new_val) {
+    if (lx != rx) {
+        int mx = (lx + rx) / 2;
+        if (x <= mx)
+            update_x(vx * 2, lx, mx, x, y, new_val);
+        else
+            update_x(vx * 2 + 1, mx + 1, rx, x, y, new_val);
+    }
+    update_y(vx, lx, rx, 1, 1, n, x, y, new_val);
+}
+
+int query_y(int vx, int vy, int tly, int try_, int ly, int ry) {
+    if (ly > ry)
+        return 0;
+    if (ly == tly && try_ == ry)
+        return tree[vx][vy];
+    int tmy = (tly + try_) / 2;
+    return query_y(vx, vy * 2, tly, tmy, ly, min(ry, tmy))
+           + query_y(vx, vy * 2 + 1, tmy + 1, try_, max(ly, tmy + 1), ry);
+}
+
+int query_x(int vx, int tlx, int trx, int lx, int rx, int ly, int ry) {
+    if (lx > rx)
+        return 0;
+    if (lx == tlx && trx == rx)
+        return query_y(vx, 1, 1, n, ly, ry);
+    int tmx = (tlx + trx) / 2;
+    return query_x(vx * 2, tlx, tmx, lx, min(rx, tmx), ly, ry)
+           + query_x(vx * 2 + 1, tmx + 1, trx, max(lx, tmx + 1), rx, ly, ry);
+}
+//update_x(1, 1, n, i, j, 1);
+//query_x(1, 1, n, x1, x2, y1, y2)
 
 //Sparse Table
 int arr[N], st[K + 1][N], lg[N]; //K= log of N
@@ -239,7 +416,8 @@ void build() {
     copy(arr, arr + N, st[0]);
 //    for (int i = 2; i < N; ++i) lg[i] = lg[i / 2] + 1;
     for (int i = 1; i <= K; ++i)
-        for (int j = 0; j + (1 << i) <= N; ++j) st[i][j] = f(st[i - 1][j], st[i - 1][j + (1 << (i - 1))]);
+        for (int j = 0; j + (1 << i) <= N; ++j)
+            st[i][j] = f(st[i - 1][j], st[i - 1][j + (1 << (i - 1))]);
 }
 
 //query logn
@@ -260,6 +438,18 @@ int query(int L, int R){
     int i = lg(R - L + 1);
     return f(st[i][L], st[i][R - (1 << i) + 1]);
 }
+
+//Mo's algo
+int block_sz = sqrt(n);
+sort(queries.begin(), queries.end(), [&](auto i, auto j) -> bool {
+    return make_pair(i.first.first / block_sz, i.first.second) <
+           make_pair(j.first.first / block_sz, j.first.second);
+});
+while (l < curr_l) curr_l--;
+while (l > curr_l) curr_l++;
+while (r > curr_r) curr_r++;
+while (r < curr_r) curr_r--;
+
 
 //LIS
 int lis(vector<int> &v, int n) {
@@ -306,11 +496,12 @@ int lcs(string X, string Y, int m, int n,vector<vector<int> >& dp){
 
 //Hashing
 //mt19937_64 rnd(chrono::steady_clock::now().time_since_epoch().count()); for single random number
+//mt19937 rng(chrono::system_clock::now().time_since_epoch().count());
 random_device rd;
 mt19937 gen(rd());
 int range1 = 31, range2 = 1029;
 uniform_int_distribution<> distr(range1, range2);
-const int N = 1e6, M1 = 1e9 + 7, B1 = distr(gen), M2 = 998244353, B2 = distr(gen);
+const int N = 2e6, M1 = 1e9 + 7, B1 = distr(gen), M2 = 998244353, B2 = distr(gen);
 vector<int> p1{1}, p2{1};
 
 void pre_calc() {
@@ -321,20 +512,32 @@ void pre_calc() {
 }
 
 struct HashedString {
-    vector<int> p_hash1, p_hash2;
+    vector<int> p_hash1, p_hash2, s_hash1, s_hash2;
 
     HashedString(const string &s) {
-        p_hash1.resize(s.size() + 1);
-        p_hash2.resize(s.size() + 1);
-        for (int i = 0; i < s.size(); i++) {
+        p_hash1.resize(s.size() + 2);
+        p_hash2.resize(s.size() + 2);
+        s_hash1.resize(s.size() + 2);
+        s_hash2.resize(s.size() + 2);
+        for (int i = 0; i < s.size(); ++i) {
             p_hash1[i + 1] = ((p_hash1[i] * B1) % M1 + s[i]) % M1;
             p_hash2[i + 1] = ((p_hash2[i] * B2) % M2 + s[i]) % M2;
+        }
+        for (int i = s.size() - 1; i >= 0; --i) {
+            s_hash1[i + 1] = ((s_hash1[i + 2] * B1) % M1 + s[i]) % M1;
+            s_hash2[i + 1] = ((s_hash2[i + 2] * B2) % M2 + s[i]) % M2;
         }
     }
 
     pair<int, int> get_hash(int start, int end) {
         int raw_val1 = (p_hash1[end + 1] - (p_hash1[start] * p1[end - start + 1]));
         int raw_val2 = (p_hash2[end + 1] - (p_hash2[start] * p2[end - start + 1]));
+        return {(raw_val1 % M1 + M1) % M1, (raw_val2 % M2 + M2) % M2};
+    }
+
+    pair<int, int> rev_hash(int start, int end) {
+        int raw_val1 = (s_hash1[start + 1] - (s_hash1[end + 2] * p1[end - start + 1]));
+        int raw_val2 = (s_hash2[start + 1] - (s_hash2[end + 2] * p2[end - start + 1]));
         return {(raw_val1 % M1 + M1) % M1, (raw_val2 % M2 + M2) % M2};
     }
 };
@@ -379,6 +582,20 @@ struct triplet {
     }
 };
 
+struct Point {
+    long double x, y;
+};
+
+istream &operator>>(istream &in, Point &p) {
+    in >> p.x >> p.y;
+    return in;
+}
+
+ostream &operator<<(ostream &out, Point &p) {
+    out << p.x << ' ' << p.y << '\n';
+    return out;
+}
+
 
 //custom comparator for pq and set
 struct cmp {
@@ -405,6 +622,13 @@ for (int i = 2; i < N; i++) {
     }
 }
 
+//factorize
+vector <int> factorize (int k) {
+    vector <int> ans;
+    while (k > 1) ans.push_back (sp[k]), k /= sp[k];
+    return ans;
+}
+
 //segmentedSieve
 vector<bool> segmentedSieve(long long L, long long R) {
     // generate all primes up to sqrt(R)
@@ -428,6 +652,23 @@ vector<bool> segmentedSieve(long long L, long long R) {
     return isPrime;
 }
 
+
+//dijkstra
+priority_queue<tuple<int, int, int>, vector<tuple<int, int, int>>, greater<>> pq;
+pq.push({0, x, y});
+vis[x][y] = 0;
+while (!pq.empty()) {
+    auto [dist, x1, y1] = pq.top();
+    pq.pop();
+    if (dist != vis[x1][y1]) continue;
+    dist++;
+    for (int i = 0; i < 4; ++i) {
+        int x2 = x1 + dx[i], y2 = y1 + dy[i];
+        if (x2 < 0 || x2 >= n || y2 < 0 || y2 >= m || v[x2][y2] == '#' || vis[x2][y2] <= dist) continue;
+        vis[x2][y2] = dist;
+        pq.push({dist, x2, y2});
+    }
+}
 
 //Bellman-Ford
 //actual
@@ -604,67 +845,55 @@ void phi_1_to_n(int n) {
 }
 
 //LCA - Binary Lifting
-const int MAX_SIZE = 1 << 10;
-const int MAX_LEVELS = 10; //log of N
-int N, Q;
-vector<vector<int>> adj;
-int depth[MAX_SIZE];
-int parents[MAX_SIZE][MAX_LEVELS];
+const int N = 2e5 + 5, LOG = 18; //log of N
+vector<int> adj[N];
+int n, q, depth[N];
+int up[N][LOG]; //up[v][j] is 2^j-th ancestor of v
 
-void dfs(int node, int parent) { // dfs to assign depths in the tree
-    parents[node][0] = parent;
-    for (int i: adj[node]) {
-        if (i != parent) {
-            depth[i] = depth[node] + 1;
-            dfs(i, node);
+void dfs(int now, int par) {
+    for (auto &it: adj[now]) {
+        if (it == par) continue;
+        depth[it] = depth[now] + 1;
+        up[it][0] = now;
+        for (int i = 1; i < LOG; ++i) {
+            up[it][i] = up[up[it][i - 1]][i - 1];
         }
+        dfs(it, now);
     }
 }
 
 int lca(int u, int v) {
     if (depth[u] < depth[v]) swap(u, v);
-    for (int i = MAX_LEVELS - 1; i >= 0; --i) {
-        if (depth[u] >= depth[v] + (1 << i)) {
-            u = parents[u][i];
+    int k = depth[u] - depth[v];
+    for (int i = LOG - 1; i >= 0; --i) {
+        if (k & (1 << i)) u = up[u][i];
+    }
+    if (u == v) return u;
+    for (int i = LOG - 1; i >= 0; --i) {
+        if (up[u][i] != up[v][i]) {
+            u = up[u][i];
+            v = up[v][i];
         }
     }
-    if (u == v) {
-        return u;
-    }
-    for (int i = MAX_LEVELS - 1; i >= 0; --i) {
-        if (parents[u][i] != 0 && parents[u][i] != parents[v][i]) {
-            u = parents[u][i];
-            v = parents[v][i];
-        }
-    }
-    return parents[u][0];
+    return up[u][0];
+}
+dfs(1, -1);
+for (int i = 1; i < n; ++i) {
+    int u, v;
+    cin >> u >> v;
+    adj[u].push_back(v);
+    adj[v].push_back(u);
 }
 
-int main() {
-    cin >> N;
-    adj.resize(N + 1);
-    for (int i = 1; i < N; ++i) {
-        int u, v;
-        cin >> u >> v;
-        adj[u].push_back(v);
-        adj[v].push_back(u);
+//centroid decompositon
+int centroid(int now, int par) {
+    for (auto &it: adj[now]) {
+        if (it == par) continue;
+        if (sz[it] > n / 2) return centroid(it, now);
     }
-    // preprocessing
-    dfs(1, 0);
-    for (int i = 1; i < MAX_LEVELS; ++i) {
-        for (int j = 1; j <= N; j ++) {
-            if (parents[j][i - 1] != 0) {
-                parents[j][i] = parents[parents[j][i - 1]][i - 1];
-            }
-        }
-    }
-    cin >> Q;
-    while (Q--) {
-        int u, v;
-        cin >> u >> v;
-        cout << "LCA is: " << lca(u, v) << '\n';
-    }
+    return now;
 }
+
 
 //Permutation
 void permute(string &s, int l, int r) {
@@ -680,15 +909,11 @@ void permute(string &s, int l, int r) {
 }
 
 //DSU
-vector<int> parent(N), sz(N);
+vector<int> parent(N), sz(N,1);
+iota(parent.begin(),parent.end(),0);
 int find_set(int v) {
     if (v == parent[v]) return v;
     return parent[v] = find_set(parent[v]);
-}
-
-void make_set(int v) {
-    parent[v] = v;
-    sz[v] = 1;
 }
 
 void union_sets(int a, int b) {
@@ -815,6 +1040,14 @@ for (int i = 1; i <= n; ++i) {
 }
 cout << dp[n][N] << '\n';
 
+// we have n numbers, calculate how many distinct numbers
+// we can form by sum some of these numbers.
+bitset<maxv> dp;
+dp.set(0);
+for(int i = 0; i < n; i++)
+    dp |= dp << a[i];
+cout << dp.count() << '\n';
+
 //SOS DP
 int n = 20;
 vector<int> a(1 << n);
@@ -876,6 +1109,7 @@ long long digitSum(int idx, int sum, int tight,
     return ret;
 }
 
+
 // Returns sum of digits in numbers from a to b.
 int rangeDigitSum(int a, int b) {
     // initializing dp with -1
@@ -900,8 +1134,27 @@ int rangeDigitSum(int a, int b) {
     return (ans2 - ans1);
 }
 
+//Find the number of integers between 1 and K (inclusive) satisfying the following condition, modulo 1e9+7
+//The sum of the digits in base ten is a multiple of D.
+const int N = 10005, MOD = 1e9 + 7;
+int memo[N][105][2], d;
+string k;
+
+int dp(int idx, int sum, bool tight) {
+    if (idx == k.size()) return (sum == 0);
+    int &ret = memo[idx][sum][tight];
+    if (~ret) return ret;
+    ret = 0;
+    int last_dig = (tight ? k[idx] - '0' : 9);
+    for (int dig = 0; dig <= last_dig; ++dig)
+        ret = (ret + dp(idx + 1, (sum + dig) % d, (tight && dig == last_dig))) % MOD;
+    return ret;
+}
+cout << (dp(0, 0, true) - 1 + MOD) % MOD << '\n';
+
+
 //cycle detect (undirected)
-function<bool(int, int)> dfs = [&](int u, int p) -> bool {
+bool dfs(int u, int p) {
     vis[u] = true;
     par[u] = p;
     for (auto &it: adj[u]) {
@@ -993,6 +1246,20 @@ public:
 const int P = 998244353; // Set the Prime
 using mint = ModNum<P>;
 
+//fact
+vector<mint> fact(1, 1);
+vector<mint> inv_fact(1, 1);
+
+mint C(int n, int k) {
+    if (k < 0 || k > n) return 0;
+    while (fact.size() < n + 1) {
+        fact.push_back(fact.back() * (mint) fact.size());
+        inv_fact.push_back(mint(1) / fact.back());
+    }
+    return fact[n] * inv_fact[k] * inv_fact[n - k];
+}
+
+
 //Articulation Bridge
 void IS_BRIDGE(int v,int to); // some function to process the found bridge
 int n; // number of nodes
@@ -1034,7 +1301,8 @@ void find_bridges() {
 }
 
 //sorted unique vector
-vec.erase(unique(vec.begin(), vec.end()), vec.end());
+sort(v.begin(), v.end());
+    v.erase(unique(v.begin(), v.end()), v.end());
 
 //bitwise hacks
 num |= (1 << pos); //set
@@ -1258,97 +1526,18 @@ struct SuffixArray{
 
 
 //tree- Euler Tour
-#include <algorithm>
-#include <iostream>
-#include <vector>
-
-using std::cout;
-using std::endl;
-using std::vector;
-
-// BeginCodeSnip{BIT (from PURS module)}
-template <class T> class BIT {
-  private:
-	int size;
-	vector<T> bit;
-	vector<T> arr;
-
-  public:
-	BIT(int size) : size(size), bit(size + 1), arr(size) {}
-
-	void set(int ind, int val) { add(ind, val - arr[ind]); }
-
-	void add(int ind, int val) {
-		arr[ind] += val;
-		ind++;
-		for (; ind <= size; ind += ind & -ind) { bit[ind] += val; }
-	}
-
-	T pref_sum(int ind) {
-		ind++;
-		T total = 0;
-		for (; ind > 0; ind -= ind & -ind) { total += bit[ind]; }
-		return total;
-	}
-};
-// EndCodeSnip
-
-vector<vector<int>> neighbors;
-vector<int> start;
-vector<int> end;
-int timer = 0;
-
-void euler_tour(int at, int prev) {
-	start[at] = timer++;
-	for (int n : neighbors[at]) {
-		if (n != prev) { euler_tour(n, at); }
-	}
-	end[at] = timer;
+vector<int> tree(4 * N), lazy(4 * N, -1), adj[N];
+int n, q, arr[N], tin[N], tout[N], timer = 0;
+void euler_tour(int now, int par) {
+    tin[now] = ++timer;
+    for (auto &it: adj[now]) {
+        if (it == par) continue;
+        euler_tour(it, now);
+    }
+    tout[now] = timer;
 }
-
-int main() {
-	int node_num;
-	int query_num;
-	std::cin >> node_num >> query_num;
-
-	vector<int> vals(node_num);
-	for (int &v : vals) { std::cin >> v; }
-
-	neighbors.resize(node_num);
-	for (int e = 0; e < node_num - 1; e++) {
-		int n1, n2;
-		std::cin >> n1 >> n2;
-		neighbors[--n1].push_back(--n2);
-		neighbors[n2].push_back(n1);
-	}
-
-	start.resize(node_num);
-	end.resize(node_num);
-	euler_tour(0, -1);
-
-	BIT<long long> bit(node_num);
-	for (int i = 0; i < node_num; i++) { bit.set(start[i], vals[i]); }
-	for (int q = 0; q < query_num; q++) {
-		int type;
-		std::cin >> type;
-		if (type == 1) {
-			int node, val;
-			std::cin >> node >> val;
-			bit.set(start[--node], val);
-		} else if (type == 2) {
-			int node;
-			std::cin >> node;
-			long long end_sum = bit.pref_sum(end[--node] - 1);
-			long long start_sum;
-			if (start[node] == 0) {
-				start_sum = 0;
-			} else {
-				start_sum = bit.pref_sum(start[node] - 1);
-			}
-			cout << end_sum - start_sum << '\n';
-		}
-	}
-}
+//update(1, 1, n, tin[i], tin[i], arr[i]);
+//query(1, 1, n, tin[s], tout[s])
 
 //bitset operation
 bitset<size> variable_name;
@@ -1366,6 +1555,8 @@ size()//Returns the size of the bitset.
 to_string()//Converts bitset to std::string.
 to_ulong()//Converts bitset to unsigned long.
 to_ullong()//Converts bitset to unsigned long long.
+_Find_first()//position of first set bit
+_Find_next(i)//first set bit after index i
 
 //tuple operation
 tuple<int,char> foo (10,'x');
@@ -1383,3 +1574,38 @@ tuple <int,char,float> tup1(20,'g',17.5);
 tuple <int,char,float> tup2(30,'f',10.5);
 // Concatenating 2 tuples to return a new tuple
 auto tup3 = tuple_cat(tup1,tup2);
+
+//array operation
+fill_n(&memo[0][0][0][0], sizeof memo / sizeof(int), INF);
+memset(memo, 0x3f, sizeof memo);
+
+//number theory related formula
+//summation of multiple of all subset= (a+1)*(b+1)*(c+1)....-1
+template <class T> int sgn(T x) { return (x > 0) - (x < 0); }
+template<class T>
+struct Point {
+	typedef Point P;
+	T x, y;
+	explicit Point(T x=0, T y=0) : x(x), y(y) {}
+	bool operator<(P p) const { return tie(x,y) < tie(p.x,p.y); }
+	bool operator==(P p) const { return tie(x,y)==tie(p.x,p.y); }
+	P operator+(P p) const { return P(x+p.x, y+p.y); }
+	P operator-(P p) const { return P(x-p.x, y-p.y); }
+	P operator*(T d) const { return P(x*d, y*d); }
+	P operator/(T d) const { return P(x/d, y/d); }
+	T dot(P p) const { return x*p.x + y*p.y; }
+	T cross(P p) const { return x*p.y - y*p.x; }
+	T cross(P a, P b) const { return (a-*this).cross(b-*this); }
+	T dist2() const { return x*x + y*y; }
+	double dist() const { return sqrt((double)dist2()); }
+	// angle to x-axis in interval [-pi, pi]
+	double angle() const { return atan2(y, x); }
+	P unit() const { return *this/dist(); } // makes dist()=1
+	P perp() const { return P(-y, x); } // rotates +90 degrees
+	P normal() const { return perp().unit(); }
+	// returns point rotated 'a' radians ccw around the origin
+	P rotate(double a) const {
+		return P(x*cos(a)-y*sin(a),x*sin(a)+y*cos(a)); }
+	friend ostream& operator<<(ostream& os, P p) {
+		return os << "(" << p.x << "," << p.y << ")"; }
+};v
